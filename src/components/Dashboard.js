@@ -15,7 +15,7 @@ import { ReactNativeAudioStreaming, Player } from 'react-native-audio-streaming'
 
 var {height, width} = Dimensions.get('window');
 var isPlay = false
-
+var timer ;
 // create a component
 class Dashboard extends Component {
     constructor(props){
@@ -27,21 +27,64 @@ class Dashboard extends Component {
             isHip: false,
             isPop: false,
             isPlay: false,
-            selectedSource: 'http://admin.r116radio.com:8014/stream.mp3',
+            selectedMusicSource: '',
             song_title: '',
             artist: '',
             playlist_title: '',
             imageURL: '',
+            songID: Number,
         };
     }
     componentWillMount() {
         StatusBar.setHidden(true)
-        this.loadData()
+        this.loadData1('http://admin.r116radio.com:2199/rpc/r116slowjams/streaminfo.get')
     }
-    loadData(){
-        console.log('----')
-        var REQUEST_URL = 'http://admin.r116radio.com:2199/rpc/r116slowjams/streaminfo.get'
-        fetch(REQUEST_URL, {
+
+    componentDidMount() {
+        // timer = setInterval(() => {
+        //     this.loadChangedArtInfo('http://admin.r116radio.com:2199/rpc/r116slowjams/streaminfo.get');
+        //     console.log(this.state.songID);
+        // }, 15000);
+    }
+    loadData1(JsonURL){
+        console.log(JsonURL)
+        fetch(JsonURL, {
+            method: 'GET',
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+        })
+        .then((response) => response.json())
+        .then((responseData) => {
+            console.log(responseData)
+            if(responseData.data[0].track.playlist){
+                this.setState({
+                    playlist_title: responseData.data[0].track.playlist.title,
+                    song_title: responseData.data[0].track.title,
+                    artist: responseData.data[0].track.artist,
+                    imageURL: responseData.data[0].track.imageurl,
+                    selectedMusicSource: responseData.data[0].tuneinurl + '.mp3',
+                    songID: responseData.data[0].track.id,
+                })
+            }
+            else{
+                this.setState({
+                    playlist_title: responseData.data[0].title,
+                    song_title: responseData.data[0].track.title,
+                    artist: responseData.data[0].track.artist,
+                    imageURL: responseData.data[0].track.imageurl,
+                    selectedMusicSource: responseData.data[0].tuneinurl + '.mp3',
+                    songID: responseData.data[0].track.id,
+                })
+            }
+        }).catch((e) => {
+            console.log(e)
+        })   
+    }
+
+    loadData(JsonURL){
+        console.log(JsonURL)
+        fetch(JsonURL, {
             method: 'GET',
             headers: { 
                 'Content-Type': 'application/json',
@@ -50,20 +93,71 @@ class Dashboard extends Component {
         .then((response) => response.json())
         .then((responseData) => {
             console.log('Music Info')
-            console.log(responseData.data[0])
+            console.log(responseData)
             console.log(responseData.data[0].track.title)
-            if(responseData.type === 'result'){
+            console.log('SONG ID -->'+ responseData.data[0].track.id,)
+            ReactNativeAudioStreaming.play(responseData.data[0].tuneinurl + '.mp3', {showIniOSMediaCenter: true, showInAndroidNotifications: true});
+            if(responseData.data[0].track.playlist){
                 this.setState({
-                    playlist_title: responseData.data[0].track.title,
-                    song_title: responseData.data[0].title,
+                    playlist_title: responseData.data[0].track.playlist.title,
+                    song_title: responseData.data[0].track.title,
                     artist: responseData.data[0].track.artist,
-                    imageURL: responseData.data[0].track.imageurl
+                    imageURL: responseData.data[0].track.imageurl,
+                    selectedMusicSource: responseData.data[0].tuneinurl + '.mp3',
+                    songID: responseData.data[0].track.id,
+                })
+            }
+            else{
+                this.setState({
+                    playlist_title: responseData.data[0].title,
+                    song_title: responseData.data[0].track.title,
+                    artist: responseData.data[0].track.artist,
+                    imageURL: responseData.data[0].track.imageurl,
+                    selectedMusicSource: responseData.data[0].tuneinurl + '.mp3',
+                    songID: responseData.data[0].track.id,
                 })
             }
         }).catch((e) => {
             console.log(e)
         })   
+    }
 
+    loadChangedArtInfo(URL){
+        fetch(URL, {
+            method: 'GET',
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+        })
+        .then((response) => response.json())
+        .then((responseData) => {
+            console.log('loadChangedArtInfo')
+            console.log(responseData)
+            console.log(responseData.data[0].track.title)
+            console.log('SONG ID -->'+ responseData.data[0].track.id,)
+            if(responseData.data[0].track.playlist){
+                this.setState({
+                    playlist_title: responseData.data[0].track.playlist.title,
+                    song_title: responseData.data[0].track.title,
+                    artist: responseData.data[0].track.artist,
+                    imageURL: responseData.data[0].track.imageurl,
+                    selectedMusicSource: responseData.data[0].tuneinurl + '.mp3',
+                    songID: responseData.data[0].track.id,
+                })
+            }
+            else{
+                this.setState({
+                    playlist_title: responseData.data[0].title,
+                    song_title: responseData.data[0].track.title,
+                    artist: responseData.data[0].track.artist,
+                    imageURL: responseData.data[0].track.imageurl,
+                    selectedMusicSource: responseData.data[0].tuneinurl + '.mp3',
+                    songID: responseData.data[0].track.id,
+                })
+            }
+        }).catch((e) => {
+            console.log(e)
+        })   
     }
     _onLayout = event => {
         this.setState({
@@ -72,66 +166,81 @@ class Dashboard extends Component {
         });
     }
 
-
-    playMusic(){
-        if(this.state.isPlay){
-            isPlay = false
-        }else{
-            isPlay = true
-        }
-        this.setState({isPlay : true})
-         ReactNativeAudioStreaming.play('http://admin.r116radio.com:8014/stream.mp3', {});
+    play(){
+        ReactNativeAudioStreaming.play(this.state.selectedMusicSource, {showIniOSMediaCenter: true, showInAndroidNotifications: true});
     }
-    StopMusic(){
-        this.setState({isPlay : false})
-         ReactNativeAudioStreaming.pause
-    }
-
 
     onShow = () => {
-        this.loadData();
-        this.playMusic()
+        clearInterval(timer); 
         
-        isPlay = true
+        if(!this.state.isPlay){
+            isPlay = true
+        }
+        ReactNativeAudioStreaming.pause()
+        timer = setInterval(() => {
+            this.loadChangedArtInfo('http://admin.r116radio.com:2199/rpc/r116slowjams/streaminfo.get');
+            console.log(this.state.songID);
+        }, 15000);
+        this.loadData('http://admin.r116radio.com:2199/rpc/r116slowjams/streaminfo.get');
         this.setState({
             isSlow: true,
             isHip: false,
-            isPop: false
+            isPop: false,
+            isPlay: true,
         })
     }
     onHip = () => {
-        this.loadData();
-        this.playMusic()
+        clearInterval(timer); 
+        
+        if(!this.state.isPlay){
+            isPlay = true
+        }
+        ReactNativeAudioStreaming.pause()
+        timer = setInterval(() => {
+            this.loadChangedArtInfo('http://admin.r116radio.com:2199/rpc/r116hiphop/streaminfo.get');
+            console.log(this.state.songID);
+        }, 15000);
+        this.loadData('http://admin.r116radio.com:2199/rpc/r116hiphop/streaminfo.get');
         this.setState({
             isSlow: false,
             isHip: true,
-            isPop: false
+            isPop: false,
+            isPlay: true,
         })
     }
     onPop = () => {
-        this.loadData();
-        this.playMusic()
+        clearInterval(timer); 
+        
+        if(!this.state.isPlay){
+            isPlay = true
+        }
+        ReactNativeAudioStreaming.pause()
+        timer = setInterval(() => {
+            this.loadChangedArtInfo('http://admin.r116radio.com:2199/rpc/r116pop/streaminfo.get');
+        }, 15000);
+        this.loadData('http://admin.r116radio.com:2199/rpc/r116pop/streaminfo.get');
         this.setState({
             isSlow: false,
             isHip: false,
-            isPop: true
+            isPop: true,
+            isPlay: true,
         })
     }
     onPressPlay = () => {
         isPlay =! isPlay
         this.setState({ isPlay: isPlay })
         if(isPlay){
-            ReactNativeAudioStreaming.play('http://admin.r116radio.com:8014/stream.mp3', {showIniOSMediaCenter: true, showInAndroidNotifications: true});
+            ReactNativeAudioStreaming.play(this.state.selectedMusicSource, {showIniOSMediaCenter: true, showInAndroidNotifications: true});
         }else{
+            clearInterval(timer); 
             ReactNativeAudioStreaming.pause()
         }
 
-        
     }
     showPlayButton(){
         return(
             <TouchableWithoutFeedback onPress = {this.onPressPlay}>
-                <Image source = {this.state.isPlay? require('../assets/play.png'):require('../assets/stop.png')} style = {styles.startImg}></Image>
+                <Image source = {this.state.isPlay? require('../assets/stop.png'):require('../assets/play.png')} style = {styles.startImg}></Image>
             </TouchableWithoutFeedback>
         )
     }
@@ -144,7 +253,7 @@ class Dashboard extends Component {
                         style={styles.musicImg}
                         defaultSource = {require('../assets/placeholder.jpg')}
                     />
-                    <View style = {{flexDirection:'row', marginTop: 30, alignItems:'center'}}>
+                    <View style = {{flexDirection:'row', marginTop: 30, alignItems:'center', maxWidth: this.state.pageWidth - 20}}>
                         {this.showPlayButton()}
                         <View style = {{marginLeft: 20}}>
                             <Text style = {styles.songtitle}>{this.state.song_title}</Text>
@@ -163,9 +272,9 @@ class Dashboard extends Component {
                         style={styles.musicImg}
                         defaultSource = {require('../assets/placeholder.jpg')}
                     />
-                    <View style = {{flexDirection:'row', marginLeft: 20}}>
+                    <View style = {{flexDirection:'row', marginLeft: 25}}>
                         {this.showPlayButton()}
-                        <View style = {{marginLeft: 20, justifyContent:'center'}}>
+                        <View style = {{marginLeft: 25, justifyContent:'center'}}>
                             <Text style = {styles.songtitle}>{this.state.song_title}</Text>
                             <Text style = {styles.artist}>{this.state.artist}</Text>
                             <Text style = {styles.playlisttitle}>{this.state.playlist_title}</Text>
@@ -176,11 +285,11 @@ class Dashboard extends Component {
         }
     }
     render() {
-        var url = 'http://admin.r116radio.com:8014/stream' + '.mp3'    
-        console.log(url)    
+
+        console.log(this.state.selectedMusicSource)    
         return (
             <View style={styles.container} onLayout={this._onLayout}>
-
+                {}
                 <View style = {styles.mainView}>
                     <Image source = {require('../assets/logo-radio.jpg')} style = {styles.logoImg}/>
                     {this.showSongInfo()}
