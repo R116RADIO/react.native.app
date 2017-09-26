@@ -10,8 +10,10 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
 } from 'react-native';
-import  Constant  from '../common/Constant'
+import Constant  from '../common/Constant'
+import Orientation from 'react-native-orientation';
 import { ReactNativeAudioStreaming, Player } from 'react-native-audio-streaming';
+import styles from './Styles'
 
 var {height, width} = Dimensions.get('window');
 var isPlay = false
@@ -31,23 +33,25 @@ class Dashboard extends Component {
             song_title: '',
             artist: '',
             playlist_title: '',
+            album: '',
             imageURL: '',
             songID: Number,
+            isPortrait: true
         };
     }
     componentWillMount() {
+        const initial = Orientation.getInitialOrientation();
+        if (initial === 'PORTRAIT') {
+            this.setState({ isPortrait: true })
+        } else {
+            this.setState({ isPortrait: false })
+        }
         StatusBar.setHidden(true)
         this.loadData1('http://admin.r116radio.com:2199/rpc/r116slowjams/streaminfo.get')
+        
     }
-
-    componentDidMount() {
-        // timer = setInterval(() => {
-        //     this.loadChangedArtInfo('http://admin.r116radio.com:2199/rpc/r116slowjams/streaminfo.get');
-        //     console.log(this.state.songID);
-        // }, 15000);
-    }
+    componentwill
     loadData1(JsonURL){
-        console.log(JsonURL)
         fetch(JsonURL, {
             method: 'GET',
             headers: { 
@@ -56,10 +60,10 @@ class Dashboard extends Component {
         })
         .then((response) => response.json())
         .then((responseData) => {
-            console.log(responseData)
             if(responseData.data[0].track.playlist){
                 this.setState({
                     playlist_title: responseData.data[0].track.playlist.title,
+                    album: responseData.data[0].track.album,
                     song_title: responseData.data[0].track.title,
                     artist: responseData.data[0].track.artist,
                     imageURL: responseData.data[0].track.imageurl,
@@ -70,6 +74,7 @@ class Dashboard extends Component {
             else{
                 this.setState({
                     playlist_title: responseData.data[0].title,
+                    album: responseData.data[0].track.album,
                     song_title: responseData.data[0].track.title,
                     artist: responseData.data[0].track.artist,
                     imageURL: responseData.data[0].track.imageurl,
@@ -83,7 +88,6 @@ class Dashboard extends Component {
     }
 
     loadData(JsonURL){
-        console.log(JsonURL)
         fetch(JsonURL, {
             method: 'GET',
             headers: { 
@@ -92,14 +96,12 @@ class Dashboard extends Component {
         })
         .then((response) => response.json())
         .then((responseData) => {
-            console.log('Music Info')
             console.log(responseData)
-            console.log(responseData.data[0].track.title)
-            console.log('SONG ID -->'+ responseData.data[0].track.id,)
             ReactNativeAudioStreaming.play(responseData.data[0].tuneinurl + '.mp3', {showIniOSMediaCenter: true, showInAndroidNotifications: true});
             if(responseData.data[0].track.playlist){
                 this.setState({
                     playlist_title: responseData.data[0].track.playlist.title,
+                    album: responseData.data[0].track.album,
                     song_title: responseData.data[0].track.title,
                     artist: responseData.data[0].track.artist,
                     imageURL: responseData.data[0].track.imageurl,
@@ -110,6 +112,7 @@ class Dashboard extends Component {
             else{
                 this.setState({
                     playlist_title: responseData.data[0].title,
+                    album: responseData.data[0].track.album,
                     song_title: responseData.data[0].track.title,
                     artist: responseData.data[0].track.artist,
                     imageURL: responseData.data[0].track.imageurl,
@@ -131,13 +134,10 @@ class Dashboard extends Component {
         })
         .then((response) => response.json())
         .then((responseData) => {
-            console.log('loadChangedArtInfo')
-            console.log(responseData)
-            console.log(responseData.data[0].track.title)
-            console.log('SONG ID -->'+ responseData.data[0].track.id,)
             if(responseData.data[0].track.playlist){
                 this.setState({
                     playlist_title: responseData.data[0].track.playlist.title,
+                    album: responseData.data[0].track.album,
                     song_title: responseData.data[0].track.title,
                     artist: responseData.data[0].track.artist,
                     imageURL: responseData.data[0].track.imageurl,
@@ -148,6 +148,7 @@ class Dashboard extends Component {
             else{
                 this.setState({
                     playlist_title: responseData.data[0].title,
+                    album: responseData.data[0].track.album,
                     song_title: responseData.data[0].track.title,
                     artist: responseData.data[0].track.artist,
                     imageURL: responseData.data[0].track.imageurl,
@@ -164,13 +165,8 @@ class Dashboard extends Component {
             pageHeight:event.nativeEvent.layout.height,
             pageWidth:event.nativeEvent.layout.width,
         });
-    }
-
-    play(){
-        ReactNativeAudioStreaming.play(this.state.selectedMusicSource, {showIniOSMediaCenter: true, showInAndroidNotifications: true});
-    }
-
-    onShow = () => {
+    }  
+    onSlow = () => {
         clearInterval(timer); 
         
         if(!this.state.isPlay){
@@ -178,10 +174,9 @@ class Dashboard extends Component {
         }
         ReactNativeAudioStreaming.pause()
         timer = setInterval(() => {
-            this.loadChangedArtInfo('http://admin.r116radio.com:2199/rpc/r116slowjams/streaminfo.get');
-            console.log(this.state.songID);
+            this.loadChangedArtInfo(Constant.SLOW_JAMES_URL);
         }, 15000);
-        this.loadData('http://admin.r116radio.com:2199/rpc/r116slowjams/streaminfo.get');
+        this.loadData(Constant.SLOW_JAMES_URL);
         this.setState({
             isSlow: true,
             isHip: false,
@@ -197,10 +192,9 @@ class Dashboard extends Component {
         }
         ReactNativeAudioStreaming.pause()
         timer = setInterval(() => {
-            this.loadChangedArtInfo('http://admin.r116radio.com:2199/rpc/r116hiphop/streaminfo.get');
-            console.log(this.state.songID);
+            this.loadChangedArtInfo(Constant.HIP_HOP_URL);
         }, 15000);
-        this.loadData('http://admin.r116radio.com:2199/rpc/r116hiphop/streaminfo.get');
+        this.loadData(Constant.HIP_HOP_URL);
         this.setState({
             isSlow: false,
             isHip: true,
@@ -216,9 +210,9 @@ class Dashboard extends Component {
         }
         ReactNativeAudioStreaming.pause()
         timer = setInterval(() => {
-            this.loadChangedArtInfo('http://admin.r116radio.com:2199/rpc/r116pop/streaminfo.get');
+            this.loadChangedArtInfo(Constant.POP_MUSIC_URL);
         }, 15000);
-        this.loadData('http://admin.r116radio.com:2199/rpc/r116pop/streaminfo.get');
+        this.loadData(Constant.POP_MUSIC_URL);
         this.setState({
             isSlow: false,
             isHip: false,
@@ -231,6 +225,21 @@ class Dashboard extends Component {
         this.setState({ isPlay: isPlay })
         if(isPlay){
             ReactNativeAudioStreaming.play(this.state.selectedMusicSource, {showIniOSMediaCenter: true, showInAndroidNotifications: true});
+            if(this.state.isSlow){
+                timer = setInterval(() => {
+                    this.loadChangedArtInfo(Constant.SLOW_JAMES_URL);
+                }, 15000);
+            }
+            if(this.state.isHip){
+                timer = setInterval(() => {
+                    this.loadChangedArtInfo(Constant.HIP_HOP_URL);
+                }, 15000);
+            }
+            if(this.state.isPop){
+                timer = setInterval(() => {
+                    this.loadChangedArtInfo(Constant.POP_MUSIC_URL);
+                }, 15000);
+            }
         }else{
             clearInterval(timer); 
             ReactNativeAudioStreaming.pause()
@@ -240,19 +249,42 @@ class Dashboard extends Component {
     showPlayButton(){
         return(
             <TouchableWithoutFeedback onPress = {this.onPressPlay}>
-                <Image source = {this.state.isPlay? require('../assets/stop.png'):require('../assets/play.png')} style = {styles.startImg}></Image>
+                <Image source = {this.state.isPlay? 
+                    require('../assets/stop.png'):
+                    require('../assets/play.png')} 
+                    style = {this.state.isPortrait? styles.startPortImg: [styles.startPortImg, {width: height/6, height: height/6}]}
+                />
             </TouchableWithoutFeedback>
         )
     }
+
+    showMusicImage(){
+        var str = this.state.imageURL
+        var title=str.substring(str.lastIndexOf("/")+1,str.lastIndexOf(".png"));
+        if(title == 'nocover'){
+            return(
+                <View
+                    style={this.state.isPortrait?[styles.musicImg, styles.placeholderText]:[styles.musicImg, styles.placeholderText, {width: height*0.3, height: height*0.3}]}
+                >
+                    <Text style = {{fontSize: 14, fontWeight:'bold'}} >{this.state.album}</Text>
+                </View>
+            )
+        }else{
+            return(
+                <Image 
+                    source={{uri: this.state.imageURL}}
+                    style={this.state.isPortrait?styles.musicImg:[styles.musicImg, {width: height*0.3, height: height*0.3}]}
+                    defaultSource = {require('../assets/placeholder.jpg')}
+                />
+            )
+        }
+    }
     showSongInfo(){
-        if(this.state.pageWidth < 600){
+        const initial = Orientation.getInitialOrientation();
+        if (this.state.pageHeight > this.state.pageWidth) {
             return(
                 <View style = {{alignItems:'center', marginTop: 0}}>
-                    <Image 
-                        source={{uri: this.state.imageURL}}
-                        style={styles.musicImg}
-                        defaultSource = {require('../assets/placeholder.jpg')}
-                    />
+                    {this.showMusicImage()}
                     <View style = {{flexDirection:'row', marginTop: 30, alignItems:'center', maxWidth: this.state.pageWidth - 20}}>
                         {this.showPlayButton()}
                         <View style = {{marginLeft: 20}}>
@@ -263,15 +295,10 @@ class Dashboard extends Component {
                     </View>
                 </View>
             )
-        }
-        else{
+        } else {
             return(
                 <View style = {{flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
-                    <Image 
-                        source={{uri: this.state.imageURL}}
-                        style={styles.musicImg}
-                        defaultSource = {require('../assets/placeholder.jpg')}
-                    />
+                    {this.showMusicImage()}
                     <View style = {{flexDirection:'row', marginLeft: 25}}>
                         {this.showPlayButton()}
                         <View style = {{marginLeft: 25, justifyContent:'center'}}>
@@ -284,21 +311,22 @@ class Dashboard extends Component {
             )
         }
     }
-    render() {
 
-        console.log(this.state.selectedMusicSource)    
+    render() {  
         return (
             <View style={styles.container} onLayout={this._onLayout}>
-                {}
                 <View style = {styles.mainView}>
-                    <Image source = {require('../assets/logo-radio.jpg')} style = {styles.logoImg}/>
+                    <Image 
+                        source = {require('../assets/logo-radio.jpg')} 
+                        style = {this.state.isPortrait? styles.logoImg: [styles.logoImg, {width:height*0.3, height: height*0.3}]}
+                    />
                     {this.showSongInfo()}
                     <Text style = {[styles.genre, {width: this.state.pageWidth}]}>Choose your genre:</Text>
                     
                 </View>
 
                 <View style = {[styles.tabView, { width: this.state.pageWidth }]}>
-                    <TouchableWithoutFeedback onPress = {this.onShow}>
+                    <TouchableWithoutFeedback onPress = {this.onSlow}>
                         <View style = {[styles.tab1, {width: this.state.pageWidth/3}, this.state.isSlow?{backgroundColor: '#460607'}:{backgroundColor: 'transparent'}]}>
                             <Text style = {styles.tab1_name}>Slow Jams</Text>
                             {this.state.isSlow?
@@ -333,79 +361,6 @@ class Dashboard extends Component {
     }
 }
 
-// define your styles
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        backgroundColor: 'black',
-    },
-    mainView: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'space-between'
-    },
-    tabView: {
-        flexDirection: 'row',
-        height: 50,
-        backgroundColor: Constant.TAP_COLOR,
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-    },
-    tab1: {
-        alignItems:'center',
-        justifyContent: 'center',
-        height: 50,
-    },
-    tab1_name: {
-        color: 'white',
-        fontSize: 17
-    },
-    line: {
-        height: 5,
-        backgroundColor: 'white',
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-    },
-    logoImg: {
-        width: width*0.3,
-        height: width*0.3,
-        resizeMode: 'contain'
-    },
-    musicImg: {
-        width: width*0.3,
-        height: width*0.3,
-        resizeMode: 'cover'
-    },
-    startImg: {
-        width: width/6,
-        height: width/6,
-    },
-    songtitle: {
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: 16,
-    },
-    artist: {
-        color: 'white',
-        fontSize: 14,
-        marginTop: 5,
-    },
-    playlisttitle: {
-        color: 'gray',
-        fontSize: 12,
-        marginTop: 5,
-    },
-    genre:{
-        color: 'white',
-        fontSize: 17,
-        marginBottom: 60,
-        textAlign: 'left',
-        paddingLeft: 15
-    }
-});
 
 //make this component available to the app
 export default Dashboard;
